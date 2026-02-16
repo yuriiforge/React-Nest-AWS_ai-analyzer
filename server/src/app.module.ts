@@ -6,6 +6,7 @@ import { AwsModule } from './lib/aws/aws.module';
 import { ConfigModule } from '@nestjs/config';
 import { envValidation } from './config/env.validation';
 import { configuration } from './config/env.config';
+import { UploadsModule } from './modules/common/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { configuration } from './config/env.config';
     }),
     DocumentModule,
     AwsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

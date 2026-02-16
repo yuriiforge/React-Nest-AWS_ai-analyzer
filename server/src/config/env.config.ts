@@ -7,6 +7,7 @@ export const configuration = () => ({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     accessKey: process.env.AWS_SECRET_ACCESS_KEY,
     s3Bucket: process.env.AWS_S3_BUCKET,
+    dynamoDbTableName: process.env.DYNAMODB_TABLE_NAME,
   },
 });
 
