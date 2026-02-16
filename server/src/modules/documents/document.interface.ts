@@ -4,7 +4,7 @@ export enum DocumentStatus {
   ERROR = 'ERROR',
 }
 
-export interface DocumentEntity {
+export interface IDocument {
   email: string;
   s3Key: string;
   fileName: string;

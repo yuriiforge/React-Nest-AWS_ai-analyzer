@@ -39,14 +39,14 @@ export class DynamoService {
     );
   }
 
-  async getItem(key: Record<string, any>) {
+  async getItem<T>(key: Record<string, any>): Promise<T | null> {
     const response = await this.docClient.send(
       new GetCommand({
         TableName: this.tableName,
         Key: key,
       }),
     );
-    return response.Item;
+    return response.Item as T;
   }
 
   // email - is partition key name I created in AWS console
