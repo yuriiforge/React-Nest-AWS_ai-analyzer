@@ -1,21 +1,25 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '../../config/env.config';
 
 @Injectable()
 export class S3Service {
   private readonly client: S3Client;
   private readonly bucket: string;
 
-  constructor() {
+  constructor(private configService: ConfigService<EnvConfig>) {
+    const awsConfig = this.configService.get('aws', { infer: true })!;
+
     this.client = new S3Client({
-      region: process.env.AWS_REGION!,
+      region: awsConfig.region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: awsConfig.accessKeyId!,
+        secretAccessKey: awsConfig.accessKey!,
       },
     });
-    this.bucket = process.env.AWS_S3_BUCKET!;
+    this.bucket = awsConfig.s3Bucket!;
   }
 
   async getPresignedUploadUrl(
