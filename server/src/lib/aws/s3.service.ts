@@ -1,4 +1,10 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -33,5 +39,39 @@ export class S3Service {
     });
 
     return getSignedUrl(this.client, command, { expiresIn: 300 });
+  }
+
+  async getFileMetadata(key: string) {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+      return await this.client.send(command);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'NotFound') {
+        return null;
+      }
+    }
+  }
+
+  async moveObject(sourceKey: string, destinationKey: string) {
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${sourceKey}`,
+        Key: destinationKey,
+      }),
+    );
+
+    await this.deleteObject(sourceKey);
+  }
+
+  async deleteObject(key: string) {
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    return this.client.send(command);
   }
 }
