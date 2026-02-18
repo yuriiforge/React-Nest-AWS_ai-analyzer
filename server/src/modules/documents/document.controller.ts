@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Query,
@@ -27,5 +28,10 @@ export class DocumentController {
     const doc = await this.documentService.getOne(email);
 
     return doc || { status: 'NO_DOCUMENT' };
+  }
+
+  @Delete()
+  async remove(@Query('email') email: string) {
+    return this.documentService.remove(email);
   }
 }

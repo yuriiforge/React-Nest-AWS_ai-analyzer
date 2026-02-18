@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Serverless framework folders
+.serverless/
+.layers/
+
+# Environment variables (CRITICAL: Never commit these!)
+.env
+.env.*
+*.env
+
+# Build outputs and logs
+dist/
+build/
+*.log
+.DS_Store
+
+# Temporary files
+.temp/
+tmp/

@@ -1,0 +1,98 @@
+service: pdf-ai-worker
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  stage: dev
+  memorySize: 1024
+  timeout: 30
+
+  environment:
+    GEMINI_API_KEY: ${env:GEMINI_API_KEY}
+    PINECONE_API_KEY: ${env:PINECONE_API_KEY}
+    PINECONE_INDEX: ${env:PINECONE_INDEX}
+    DYNAMODB_TABLE: ${env:DYNAMODB_TABLE_NAME}
+    S3_BUCKET: ${env:AWS_S3_BUCKET}
+
+  # IAM Permissions (Security)
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: 'arn:aws:s3:::${env:AWS_S3_BUCKET}/*'
+        - Effect: Allow
+          Action:
+            - dynamodb:UpdateItem
+            - dynamodb:GetItem
+          Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE_NAME}'
+
+# List of the Worker Functions
+functions:
+  extractText:
+    handler: handler.extractText
+  processEmbeddings:
+    handler: handler.processEmbeddings
+    timeout: 120
+  updateStatus:
+    handler: handler.updateStatus
+
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    format: esm
+    platform: node
+    banner:
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);"
+    external:
+      - canvas
+      - '@aws-sdk/*'
+
+# Step Functions Orchestration
+plugins:
+  - serverless-step-functions
+
+stepFunctions:
+  stateMachines:
+    pdfPipeline:
+      name: PdfProcessingStateMachine
+      definition:
+        StartAt: ExtractText
+        States:
+          ExtractText:
+            Type: Task
+            Resource: !GetAtt extractText.Arn
+            Next: ProcessEmbeddings
+            Catch:
+              - ErrorEquals: ['States.ALL']
+                Next: HandleError
+
+          ProcessEmbeddings:
+            Type: Task
+            Resource: !GetAtt processEmbeddings.Arn
+            Next: HandleSuccess
+            Catch:
+              - ErrorEquals: ['States.ALL']
+                Next: HandleError
+
+          HandleSuccess:
+            Type: Task
+            Resource: !GetAtt updateStatus.Arn
+            Parameters:
+              email.$: '$.email'
+              status: 'COMPLETED'
+            End: true
+
+          HandleError:
+            Type: Task
+            Resource: !GetAtt updateStatus.Arn
+            Parameters:
+              email.$: '$.email'
+              status: 'FAILED'
+            End: true

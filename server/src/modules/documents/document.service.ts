@@ -3,12 +3,14 @@ import { S3Service } from '../../lib/aws/s3.service';
 import { DynamoService } from '../../lib/aws/dynamo-db.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentStatus, IDocument } from './document.interface';
+import { StepFunctionsService } from '../../lib/aws/step-functions.service';
 
 @Injectable()
 export class DocumentService {
   constructor(
     private readonly s3Service: S3Service,
     private readonly dynamoService: DynamoService,
+    private readonly stepFunctionsService: StepFunctionsService,
   ) {}
 
   async createDocument(dto: CreateDocumentDto) {
@@ -46,7 +48,7 @@ export class DocumentService {
         );
     }
 
-    //TODO trigger step function
+    await this.stepFunctionsService.startProcessing(email, permanentKey);
 
     return documentRecord;
   }
@@ -59,5 +61,17 @@ export class DocumentService {
     }
 
     return document;
+  }
+
+  async remove(email: string) {
+    const doc = await this.dynamoService.getItem<IDocument>({ email });
+
+    if (doc) {
+      await this.s3Service.deleteObject(doc.s3Key);
+
+      await this.dynamoService.deleteItem(email);
+    }
+
+    return { success: true };
   }
 }
