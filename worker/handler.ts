@@ -5,13 +5,15 @@ import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Pinecone } from '@pinecone-database/pinecone';
 
-// init
+// Initialization
 const s3 = new S3Client({});
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAI.getGenerativeModel({
   model: 'gemini-embedding-001',
 });
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
 
 interface PipelineEvent {
   s3Key: string;
@@ -28,12 +30,13 @@ type VectorMetadata = {
   timestamp: string;
 };
 
-interface EmbeddingsEvent {
-  rawText: string;
+interface StatusUpdateEvent {
   email: string;
+  status: 'COMPLETED' | 'FAILED' | 'PROCESSING';
 }
 
 // --- LAMBDA 1: Text Extractor ---
+// Downloads a PDF from S3 and extracts its text content.
 export const extractText = async (
   event: PipelineEvent,
 ): Promise<ExtractionResult> => {
@@ -68,6 +71,8 @@ export const extractText = async (
 };
 
 // --- LAMBDA 2: AI Processing ---
+// Chunks extracted text and generates vector embeddings via Google Gemini.
+// Synchronizes generated vectors with the Pinecone index.
 export const processEmbeddings = async (event: any) => {
   const { rawText, email } = event;
   const index = pc.index<VectorMetadata>(process.env.PINECONE_INDEX!);
@@ -109,14 +114,8 @@ export const processEmbeddings = async (event: any) => {
   }
 };
 
-interface StatusUpdateEvent {
-  email: string;
-  status: 'COMPLETED' | 'FAILED' | 'PROCESSING';
-}
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
-
 // --- LAMBDA 3: Finalizer ---
+// Updates the processing status in DynamoDB for the specific user.
 export const updateStatus = async (
   event: StatusUpdateEvent,
 ): Promise<{ success: boolean }> => {
