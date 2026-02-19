@@ -74,8 +74,11 @@ export const extractText = async (
 // Chunks extracted text and generates vector embeddings via Google Gemini.
 // Synchronizes generated vectors with the Pinecone index.
 export const processEmbeddings = async (event: any) => {
+  const pineconeIndex = process.env.PINECONE_INDEX;
+  const dimensions = parseInt(process.env.EMBEDDING_DIMENSIONS || '1024', 10);
+
   const { rawText, email } = event;
-  const index = pc.index<VectorMetadata>(process.env.PINECONE_INDEX!);
+  const index = pc.index<VectorMetadata>({ name: pineconeIndex });
 
   const chunks =
     rawText
@@ -88,7 +91,7 @@ export const processEmbeddings = async (event: any) => {
       requests: chunks.map((text: string) => ({
         content: { role: 'user', parts: [{ text }] },
 
-        outputDimensionality: 1024,
+        outputDimensionality: dimensions,
         taskType: 'RETRIEVAL_DOCUMENT' as any,
       })),
     });

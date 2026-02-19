@@ -8,6 +8,17 @@ export const configuration = () => ({
     accessKey: process.env.AWS_SECRET_ACCESS_KEY,
     s3Bucket: process.env.AWS_S3_BUCKET,
     dynamoDbTableName: process.env.DYNAMODB_TABLE_NAME,
+    stateMachine: process.env.AWS_STATE_MACHINE_ARN,
+  },
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY,
+    chatModel: process.env.GEMINI_CHAT_MODEL,
+    embeddingModel: process.env.GEMINI_EMBEDDING_MODEL,
+  },
+  pinecone: {
+    apiKey: process.env.PINECONE_API_KEY,
+    index: process.env.PINECONE_INDEX,
+    dimensions: process.env.EMBEDDING_DIMENSIONS,
   },
 });
 

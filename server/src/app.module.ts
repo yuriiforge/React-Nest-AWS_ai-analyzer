@@ -8,6 +8,7 @@ import { envValidation } from './config/env.validation';
 import { configuration } from './config/env.config';
 import { UploadsModule } from './modules/common/uploads/uploads.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { PineconeModule } from './lib/pinecone/pinecone.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ChatModule } from './modules/chat/chat.module';
     AwsModule,
     UploadsModule,
     ChatModule,
+    PineconeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { Request, type Response } from 'express';
+import { type Response } from 'express';
 
 @Controller('chats')
 export class ChatController {
@@ -11,7 +11,6 @@ export class ChatController {
     @Body() body: { question: string; email: string },
     @Res() res: Response,
   ) {
-    console.log(body.email);
     const context = await this.chatService.getContext(
       body.email,
       body.question,

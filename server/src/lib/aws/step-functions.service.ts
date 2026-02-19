@@ -1,21 +1,28 @@
 import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '../../config/env.config';
 
 @Injectable()
 export class StepFunctionsService {
   private readonly client: SFNClient;
   private readonly stateMachineArn: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService<EnvConfig>) {
     this.client = new SFNClient({
-      region: this.configService.get('AWS_REGION'),
+      region: this.configService.get('aws.region', { infer: true })!,
       credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID')!,
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY')!,
+        accessKeyId: this.configService.get('aws.accessKeyId', {
+          infer: true,
+        })!,
+        secretAccessKey: this.configService.get('aws.accessKey', {
+          infer: true,
+        })!,
       },
     });
-    this.stateMachineArn = this.configService.get('AWS_STATE_MACHINE_ARN')!;
+    this.stateMachineArn = this.configService.get('aws.stateMachine', {
+      infer: true,
+    })!;
   }
 
   async startProcessing(email: string, s3Key: string) {

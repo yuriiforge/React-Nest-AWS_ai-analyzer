@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Pinecone, RecordMetadata } from '@pinecone-database/pinecone';
 import {
+  EmbedContentRequest,
   GenerativeModel,
   GoogleGenerativeAI,
   TaskType,
 } from '@google/generative-ai';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '../../config/env.config';
 
 interface VectorMetadata extends RecordMetadata {
   text: string;
@@ -12,47 +15,57 @@ interface VectorMetadata extends RecordMetadata {
   timestamp: string;
 }
 
+interface EnhancedEmbedRequest extends EmbedContentRequest {
+  outputDimensionality?: number;
+}
+
 @Injectable()
 export class ChatService {
   private pc: Pinecone;
   private genAI: GoogleGenerativeAI;
+  private dimensions: number;
 
-  constructor() {
-    const pineconeKey = process.env.PINECONE_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
-
-    if (!pineconeKey) {
-      throw new Error('PINECONE_API_KEY is missing');
-    }
-
-    if (!geminiKey) {
-      throw new Error('GEMINI_API_KEY is missing');
-    }
-
-    this.pc = new Pinecone({ apiKey: pineconeKey });
-    this.genAI = new GoogleGenerativeAI(geminiKey);
+  constructor(private readonly configService: ConfigService<EnvConfig>) {
+    this.pc = new Pinecone({
+      apiKey: configService.get('pinecone.apiKey', { infer: true })!,
+    });
+    this.genAI = new GoogleGenerativeAI(
+      configService.get('gemini.apiKey', { infer: true })!,
+    );
+    this.dimensions = parseInt(
+      configService.get('pinecone.dimensions', { infer: true })!,
+    );
   }
 
   getChatModel(): GenerativeModel {
+    const modelName = this.configService.get('gemini.chatModel', {
+      infer: true,
+    })!;
     return this.genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: modelName,
       systemInstruction:
         'You are a helpful assistant. Use the provided context to answer questions accurately.',
     });
   }
 
   async getContext(email: string, question: string): Promise<string> {
+    const embeddingModel = this.configService.get('gemini.embeddingModel', {
+      infer: true,
+    })!;
+    const pIndex = this.configService.get('pinecone.index', { infer: true })!;
     const model = this.genAI.getGenerativeModel({
-      model: 'gemini-embedding-001',
+      model: embeddingModel,
     });
 
-    const embedding = await model.embedContent({
+    const request: EnhancedEmbedRequest = {
       content: { role: 'user', parts: [{ text: question }] },
       taskType: TaskType.RETRIEVAL_QUERY,
-      outputDimensionality: 1024,
-    } as any);
+      outputDimensionality: this.dimensions,
+    };
 
-    const index = this.pc.index<VectorMetadata>(process.env.PINECONE_INDEX!);
+    const embedding = await model.embedContent(request);
+
+    const index = this.pc.index<VectorMetadata>({ name: pIndex });
     const result = await index.namespace(email).query({
       vector: embedding.embedding.values,
       topK: 5,

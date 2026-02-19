@@ -14,4 +14,13 @@ export const envValidation = Joi.object({
   // Resource Names
   AWS_S3_BUCKET: Joi.string().required(),
   DYNAMODB_TABLE_NAME: Joi.string().required(),
+  AWS_STATE_MACHINE_ARN: Joi.string().required(),
+
+  PINECONE_API_KEY: Joi.string().required(),
+  PINECONE_INDEX: Joi.string().required(),
+  EMBEDDING_DIMENSIONS: Joi.number().required(),
+
+  GEMINI_API_KEY: Joi.string().required(),
+  GEMINI_CHAT_MODEL: Joi.string().required(),
+  GEMINI_EMBEDDING_MODEL: Joi.string().required(),
 });

@@ -4,6 +4,7 @@ import { DynamoService } from '../../lib/aws/dynamo-db.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentStatus, IDocument } from './document.interface';
 import { StepFunctionsService } from '../../lib/aws/step-functions.service';
+import { VectorStoreService } from '../../lib/pinecone/vector-store.service';
 
 @Injectable()
 export class DocumentService {
@@ -11,6 +12,7 @@ export class DocumentService {
     private readonly s3Service: S3Service,
     private readonly dynamoService: DynamoService,
     private readonly stepFunctionsService: StepFunctionsService,
+    private readonly vectorStoreService: VectorStoreService,
   ) {}
 
   async createDocument(dto: CreateDocumentDto) {
@@ -66,12 +68,21 @@ export class DocumentService {
   async remove(email: string) {
     const doc = await this.dynamoService.getItem<IDocument>({ email });
 
-    if (doc) {
-      await this.s3Service.deleteObject(doc.s3Key);
-
-      await this.dynamoService.deleteItem(email);
+    if (!doc) {
+      return { success: true, message: 'No document found' };
     }
 
-    return { success: true };
+    try {
+      await Promise.all([
+        this.s3Service.deleteObject(doc.s3Key),
+        this.dynamoService.deleteItem(email),
+        this.vectorStoreService.deleteNamespace(email),
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      console.error(`Failed to fully clean up resources for ${email}:`, error);
+      throw error;
+    }
   }
 }
