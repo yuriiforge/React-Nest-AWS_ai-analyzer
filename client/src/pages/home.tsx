@@ -9,8 +9,9 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileUp, CheckCircle } from 'lucide-react';
+import { Loader2, FileUp, CheckCircle, ArrowLeft } from 'lucide-react';
 import { DocumentStatus } from '@/components/document-status';
+import { ChatInterface } from '@/components/chat-interface';
 
 const HomePage = () => {
   const { data: doc, isLoading: isCheckingStatus } = useDocumentStatus();
@@ -18,6 +19,7 @@ const HomePage = () => {
   const { mutate: upload, isPending, isSuccess, error } = useUploadDocument();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isChatActive, setIsChatActive] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -38,11 +40,31 @@ const HomePage = () => {
     );
   }
 
+  const hasDocument = doc && doc.status !== 'NO_DOCUMENT';
+  const isReadyForChat = doc?.status === 'COMPLETED';
+
+  if (isChatActive && isReadyForChat) {
+    return (
+      <div className="container max-w-4xl py-10 mx-auto space-y-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsChatActive(false)}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Status
+        </Button>
+        <ChatInterface />
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-2xl py-10 mx-auto space-y-8">
-      {doc && doc.status !== 'NO_DOCUMENT' ? (
-        <DocumentStatus />
+      {hasDocument ? (
+        <DocumentStatus onChatStart={() => setIsChatActive(true)} />
       ) : (
+        // VIEW 3: Upload Card
         <Card className="border-dashed border-2 shadow-sm">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Document Brain</CardTitle>

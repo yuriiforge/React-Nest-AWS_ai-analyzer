@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { envValidation } from './config/env.validation';
 import { configuration } from './config/env.config';
 import { UploadsModule } from './modules/common/uploads/uploads.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UploadsModule } from './modules/common/uploads/uploads.module';
     DocumentModule,
     AwsModule,
     UploadsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

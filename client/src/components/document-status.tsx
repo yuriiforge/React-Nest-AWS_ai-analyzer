@@ -1,4 +1,3 @@
-// src/components/document-status.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,10 +11,13 @@ import {
 import { useDocumentStatus } from '@/api/hooks/useDocumentStatus';
 import { useDeleteDocument } from '@/api/hooks/useRemoveDocument';
 
-export const DocumentStatus = () => {
+export const DocumentStatus = ({
+  onChatStart,
+}: {
+  onChatStart: () => void;
+}) => {
   const { data: doc, isLoading } = useDocumentStatus();
 
-  // Custom hook we created to handle API call + query invalidation
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument(
     doc?.email,
   );
@@ -60,12 +62,7 @@ export const DocumentStatus = () => {
         </div>
 
         {doc.status === 'COMPLETED' && (
-          <Button
-            className="w-full gap-2"
-            onClick={() => {
-              /* navigate('/chat') */
-            }}
-          >
+          <Button className="w-full gap-2" onClick={onChatStart}>
             <MessageSquare className="h-4 w-4" /> Start Chatting
           </Button>
         )}
