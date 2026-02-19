@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
-import { STORAGE_KEYS } from '@/constants/storage_keys';
+import { useUser } from '@/lib/context/user-context';
+import { DocumentStatusType } from '@/constants/document_status';
 
 export const useDocumentStatus = () => {
-  const userRaw = localStorage.getItem(STORAGE_KEYS.USER);
-  const email = userRaw ? JSON.parse(userRaw).email : null;
+  const { user } = useUser();
+  const email = user?.email;
 
   return useQuery({
     queryKey: ['document-status', email],
@@ -15,7 +16,10 @@ export const useDocumentStatus = () => {
     enabled: !!email,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === 'PENDING' || status === 'PROCESSING' ? 3000 : false;
+      return status === DocumentStatusType.PENDING ||
+        status === DocumentStatusType.PROCESSING
+        ? 3000
+        : false;
     },
   });
 };

@@ -1,67 +1,58 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
 import {
-  Loader2,
-  CheckCircle2,
   AlertCircle,
+  CheckCircle2,
   Clock,
-  Trash2,
+  Loader2,
   MessageSquare,
+  Trash2,
 } from 'lucide-react';
-import { useDocumentStatus } from '@/api/hooks/useDocumentStatus';
-import { useDeleteDocument } from '@/api/hooks/useRemoveDocument';
+import { DocumentStatusType } from '@/constants/document_status';
+import type { Document } from '@/types/document';
+import { StatusBadge } from './status-badge';
+
+interface DocumentStatusProps {
+  doc: Document;
+  isDeleting: boolean;
+  onDelete: () => void;
+  onChatStart: () => void;
+}
 
 export const DocumentStatus = ({
+  doc,
+  isDeleting,
+  onDelete,
   onChatStart,
-}: {
-  onChatStart: () => void;
-}) => {
-  const { data: doc, isLoading } = useDocumentStatus();
-
-  const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument(
-    doc?.email,
-  );
-
-  if (isLoading)
-    return <Loader2 className="animate-spin mx-auto text-primary" />;
-  if (!doc || doc.status === 'NO_DOCUMENT') return null;
-
-  const isProcessing = doc.status === 'PENDING' || doc.status === 'PROCESSING';
+}: DocumentStatusProps) => {
+  const isProcessing =
+    doc.status === DocumentStatusType.PENDING ||
+    doc.status === DocumentStatusType.PROCESSING;
+  const isCompleted = doc.status === DocumentStatusType.COMPLETED;
 
   return (
     <Card className="w-full max-w-2xl mx-auto border-primary/20 bg-accent/5 overflow-hidden">
-      {/* Progress Bar for visual feedback */}
       {isProcessing && (
         <div className="h-1 w-full bg-yellow-500 animate-pulse" />
       )}
 
       <CardHeader className="flex flex-row items-center justify-between">
-        <div>
+        <div className="space-y-1">
           <CardTitle className="text-xl">Active Document</CardTitle>
-          <p className="text-sm text-muted-foreground truncate max-w-[300px]">
+          <p
+            className="text-sm text-muted-foreground truncate max-w-75"
+            title={doc.fileName}
+          >
             {doc.fileName}
           </p>
         </div>
-        {isProcessing ? (
-          <Clock className="text-yellow-500 animate-spin-slow h-6 w-6" />
-        ) : doc.status === 'COMPLETED' ? (
-          <CheckCircle2 className="text-green-500 h-6 w-6" />
-        ) : (
-          <AlertCircle className="text-red-500 h-6 w-6" />
-        )}
+        <StatusIcon status={doc.status} isProcessing={isProcessing} />
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-background rounded-lg border">
-          <span className="text-sm font-medium">Pipeline Status</span>
-          <span
-            className={`text-sm font-bold uppercase ${isProcessing ? 'text-yellow-600' : 'text-primary'}`}
-          >
-            {doc.status}
-          </span>
-        </div>
+        <StatusBadge status={doc.status} isProcessing={isProcessing} />
 
-        {doc.status === 'COMPLETED' && (
+        {isCompleted && (
           <Button className="w-full gap-2" onClick={onChatStart}>
             <MessageSquare className="h-4 w-4" /> Start Chatting
           </Button>
@@ -71,8 +62,8 @@ export const DocumentStatus = ({
           variant="ghost"
           className="w-full text-destructive hover:bg-destructive/10"
           size="sm"
-          disabled={isDeleting}
-          onClick={() => deleteDoc()}
+          disabled={isDeleting || isProcessing}
+          onClick={onDelete}
         >
           {isDeleting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -84,4 +75,18 @@ export const DocumentStatus = ({
       </CardContent>
     </Card>
   );
+};
+
+const StatusIcon = ({
+  status,
+  isProcessing,
+}: {
+  status: string;
+  isProcessing: boolean;
+}) => {
+  if (isProcessing)
+    return <Clock className="text-yellow-500 animate-spin-slow h-6 w-6" />;
+  if (status === 'COMPLETED')
+    return <CheckCircle2 className="text-green-500 h-6 w-6" />;
+  return <AlertCircle className="text-red-500 h-6 w-6" />;
 };

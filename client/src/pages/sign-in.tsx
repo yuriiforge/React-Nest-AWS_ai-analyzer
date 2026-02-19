@@ -10,12 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { STORAGE_KEYS } from '@/constants/storage_keys';
+import { useUser } from '@/lib/context/user-context';
 
 const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const { signIn } = useUser();
 
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -35,8 +37,7 @@ const SignInPage = () => {
       return;
     }
 
-    const userData = { email };
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+    signIn(email);
 
     navigate('/');
   };

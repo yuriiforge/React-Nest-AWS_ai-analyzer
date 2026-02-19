@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send } from 'lucide-react';
+import { useUser } from '@/lib/context/user-context';
+import { BASE_URL } from '@/api/client';
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState<
@@ -11,9 +13,9 @@ export const ChatInterface = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const rawData = localStorage.getItem('doc_app_user')!;
-  const parsedData = JSON.parse(rawData);
-  const userEmail = parsedData.email;
+  const { user } = useUser();
+  const email = user?.email;
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -28,10 +30,10 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:4000/chats/message', {
+      const response = await fetch(`${BASE_URL}/chats/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: userMessage, email: userEmail }),
+        body: JSON.stringify({ question: userMessage, email }),
       });
 
       if (!response.ok) throw new Error('Failed to connect to server');
