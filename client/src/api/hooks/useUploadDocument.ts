@@ -1,10 +1,11 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import axios from 'axios';
 import { useUser } from '@/lib/context/user-context';
 
 export const useUploadDocument = () => {
   const { user } = useUser();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (file: File) => {
@@ -27,6 +28,9 @@ export const useUploadDocument = () => {
       });
 
       return document;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-status'] });
     },
   });
 };
