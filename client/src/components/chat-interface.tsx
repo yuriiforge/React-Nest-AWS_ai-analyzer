@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send } from 'lucide-react';
+import { AlertCircle, Send } from 'lucide-react';
 import { useUser } from '@/lib/context/user-context';
 import { BASE_URL } from '@/api/client';
 
@@ -12,6 +12,7 @@ export const ChatInterface = () => {
   >([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
   const email = user?.email;
@@ -43,6 +44,10 @@ export const ChatInterface = () => {
         body: JSON.stringify({ question: userMessage, email }),
       });
 
+      if (response.status === 429) {
+        throw new Error('QUOTA_EXCEEDED');
+      }
+
       if (!response.ok) throw new Error('Failed to connect to server');
 
       const reader = response.body?.getReader();
@@ -71,6 +76,27 @@ export const ChatInterface = () => {
       }
     } catch (error) {
       console.error('Streaming Error:', error);
+
+      let friendlyMessage = 'An unexpected error occurred.';
+      if (error instanceof Error) {
+        if (error.message === 'QUOTA_EXCEEDED') {
+          friendlyMessage =
+            'Free tier limit reached. Please wait a moment before trying again.';
+        } else if (error.message === 'SERVER_ERROR') {
+          friendlyMessage =
+            'The server is having trouble. Please try again later.';
+        }
+      }
+      setErrorMessage(friendlyMessage);
+
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last && last.role === 'ai' && last.content === '') {
+          updated[updated.length - 1].content = `Error: ${friendlyMessage}`;
+        }
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +131,13 @@ export const ChatInterface = () => {
           <div ref={scrollRef} className="h-2 w-full" />
         </div>
       </ScrollArea>
+
+      {errorMessage && (
+        <div className="mx-4 mb-2 p-2 bg-destructive/10 text-destructive text-xs rounded border border-destructive/20 flex items-center gap-2">
+          <AlertCircle className="h-3 w-3" />
+          {errorMessage}
+        </div>
+      )}
 
       <div className="p-4 border-t flex gap-2 bg-background">
         <Input
