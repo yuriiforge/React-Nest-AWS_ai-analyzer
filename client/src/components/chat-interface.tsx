@@ -67,7 +67,7 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="flex flex-col h-150 w-full border rounded-lg bg-background">
+    <div className="flex flex-col h-[600] w-full border rounded-lg bg-background">
       <ScrollArea className="flex-1 p-4">
         {messages.map((m, i) => (
           <div
