@@ -6,6 +6,7 @@ export interface User {
 
 export interface UserContextType {
   user: User | null;
+  isLoading: boolean;
   signIn: (email: string) => void;
   signOut: () => void;
 }

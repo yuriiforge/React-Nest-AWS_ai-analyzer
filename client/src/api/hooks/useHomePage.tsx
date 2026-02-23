@@ -11,6 +11,7 @@ export const useHomePage = () => {
     isPending: isUploading,
     isSuccess,
     error: uploadError,
+    reset: resetUpload,
   } = useUploadDocument();
 
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument(
@@ -21,7 +22,10 @@ export const useHomePage = () => {
   const [isChatActive, setIsChatActive] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+    if (e.target.files?.[0]) {
+      resetUpload();
+      setSelectedFile(e.target.files[0]);
+    }
   };
 
   const handleUpload = () => {
@@ -34,7 +38,12 @@ export const useHomePage = () => {
         'Are you sure you want to delete this document? This cannot be undone.',
       )
     ) {
-      deleteDoc();
+      deleteDoc(undefined, {
+        onSuccess: () => {
+          resetUpload();
+          setSelectedFile(null);
+        },
+      });
     }
   };
 
@@ -56,5 +65,6 @@ export const useHomePage = () => {
     handleDelete,
     hasDocument,
     isReadyForChat,
+    resetUpload,
   };
 };

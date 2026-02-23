@@ -7,6 +7,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem(STORAGE_KEYS.USER);
     return saved ? JSON.parse(saved) : null;
   });
+  const [isLoading] = useState(false);
 
   const signIn = (email: string) => {
     const userData = { email };
@@ -20,7 +21,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, signIn, signOut }}>
+    <UserContext.Provider value={{ user, signIn, signOut, isLoading }}>
       {children}
     </UserContext.Provider>
   );

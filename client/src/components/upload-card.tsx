@@ -58,7 +58,7 @@ export const UploadCard = ({
 
         <Button
           className="w-full py-6 text-lg"
-          disabled={!selectedFile || isPending || isSuccess}
+          disabled={!selectedFile || isPending}
           onClick={onUpload}
         >
           {isPending ? (
