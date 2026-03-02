@@ -1,14 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { GetStatusDto } from './dto/get-status.dto';
 
 @Controller('documents')
 export class DocumentController {
@@ -20,12 +13,8 @@ export class DocumentController {
   }
 
   @Get('status')
-  async getStatus(@Query('email') email: string) {
-    if (!email) {
-      throw new BadRequestException('Email query parameter is required');
-    }
-
-    const doc = await this.documentService.getOne(email);
+  async getStatus(@Query() query: GetStatusDto) {
+    const doc = await this.documentService.find(query.email);
 
     return doc || { status: 'NO_DOCUMENT' };
   }

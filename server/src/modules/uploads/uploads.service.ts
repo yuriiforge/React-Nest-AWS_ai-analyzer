@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { S3Service } from '../../../lib/aws/s3.service';
+import { S3Service } from '../../lib/aws/s3.service';
 import { GetUploadUrlDto } from './dto/get-uploads-url.dto';
 
 @Injectable()

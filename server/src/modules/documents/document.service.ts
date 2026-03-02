@@ -55,7 +55,7 @@ export class DocumentService {
     return documentRecord;
   }
 
-  async getOne(email: string) {
+  async find(email: string) {
     const document = await this.dynamoService.getItem({ email });
 
     if (!document) {
