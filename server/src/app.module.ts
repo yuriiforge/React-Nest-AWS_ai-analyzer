@@ -6,9 +6,9 @@ import { AwsModule } from './lib/aws/aws.module';
 import { ConfigModule } from '@nestjs/config';
 import { envValidation } from './config/env.validation';
 import { configuration } from './config/env.config';
-import { UploadsModule } from './modules/common/uploads/uploads.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PineconeModule } from './lib/pinecone/pinecone.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [

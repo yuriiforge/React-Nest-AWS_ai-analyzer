@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { S3Service } from '../../lib/aws/s3.service';
-import { DynamoService } from '../../lib/aws/dynamo-db.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentStatus, IDocument } from './document.interface';
 import { StepFunctionsService } from '../../lib/aws/step-functions.service';
 import { VectorStoreService } from '../../lib/pinecone/vector-store.service';
+import { DocumentsRepository } from './documents.repository';
 
 @Injectable()
 export class DocumentService {
   constructor(
     private readonly s3Service: S3Service,
-    private readonly dynamoService: DynamoService,
     private readonly stepFunctionsService: StepFunctionsService,
     private readonly vectorStoreService: VectorStoreService,
+    private readonly documentsRepo: DocumentsRepository,
   ) {}
 
   async createDocument(dto: CreateDocumentDto) {
@@ -23,21 +23,21 @@ export class DocumentService {
       throw new BadRequestException('File not found in staging area.');
     }
 
-    const existingDoc = await this.dynamoService.getItem<IDocument>({ email });
+    const existingDoc = await this.documentsRepo.findOne({ email });
 
     const permanentKey = `documents/${email}/${Date.now()}-${fileName}`;
 
     await this.s3Service.moveObject(s3Key, permanentKey);
 
-    const documentRecord = {
+    const documentRecord: IDocument = {
       email,
       fileName,
       s3Key: permanentKey,
       status: DocumentStatus.PENDING,
-      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    await this.dynamoService.saveItem(documentRecord);
+    await this.documentsRepo.create(documentRecord);
 
     if (existingDoc?.s3Key) {
       this.s3Service
@@ -56,7 +56,7 @@ export class DocumentService {
   }
 
   async find(email: string) {
-    const document = await this.dynamoService.getItem({ email });
+    const document = await this.documentsRepo.findOne({ email });
 
     if (!document) {
       return null;
@@ -66,7 +66,7 @@ export class DocumentService {
   }
 
   async remove(email: string) {
-    const doc = await this.dynamoService.getItem<IDocument>({ email });
+    const doc = await this.documentsRepo.findOne({ email });
 
     if (!doc) {
       return { success: true, message: 'No document found' };
@@ -75,7 +75,7 @@ export class DocumentService {
     try {
       await Promise.all([
         this.s3Service.deleteObject(doc.s3Key),
-        this.dynamoService.deleteItem(email),
+        this.documentsRepo.delete({ email }),
         this.vectorStoreService.deleteNamespace(email),
       ]);
 
