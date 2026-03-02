@@ -88,15 +88,6 @@ export const ChatInterface = () => {
         }
       }
       setErrorMessage(friendlyMessage);
-
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        if (last && last.role === 'ai' && last.content === '') {
-          updated[updated.length - 1].content = `Error: ${friendlyMessage}`;
-        }
-        return updated;
-      });
     } finally {
       setIsLoading(false);
     }
